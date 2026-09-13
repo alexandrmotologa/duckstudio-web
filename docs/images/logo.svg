@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <!-- Gradients -->
+    <linearGradient id="emerald-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <linearGradient id="amber-bill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="40%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <linearGradient id="cyan-optic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#00f5ff"/>
+    </linearGradient>
+
+    <linearGradient id="slate-chest" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0b0f19"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.16" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Outer Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="36" stroke-linejoin="round" />
+
+      <!-- Inner Dashed Telemetry Ring -->
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Solid Watertight Base Silhouette -->
+      <path d="
+        M 0,-280
+        L 110,-230
+        L 175,-150
+        L 220,-50
+        L 200,90
+        L 240,240
+        L 150,300
+        L 0,330
+        L -150,300
+        L -240,240
+        L -200,90
+        L -220,-50
+        L -175,-150
+        L -110,-230
+        Z
+      " fill="#0b0f19" />
+
+      <!-- Chest / Breast Low-Poly Facets (Deep Obsidian & Slate Armor) -->
+      <!-- Lower Center Breast Plate -->
+      <polygon points="0,330 150,300 120,200 0,220" fill="#0f172a" stroke="#1e293b" stroke-width="1.5" />
+      <polygon points="0,330 -150,300 -120,200 0,220" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+
+      <!-- Outer Lower Breast Flanks -->
+      <polygon points="150,300 240,240 190,170 120,200" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+      <polygon points="-150,300 -240,240 -190,170 -120,200" fill="#0f172a" stroke="#1e293b" stroke-width="1.5" />
+
+      <!-- Upper Chest Armor Shield -->
+      <polygon points="0,220 120,200 90,130 0,140" fill="#334155" stroke="#475569" stroke-width="1.5" />
+      <polygon points="0,220 -120,200 -90,130 0,140" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+      <polygon points="120,200 190,170 150,110 90,130" fill="#475569" stroke="#64748b" stroke-width="1.5" />
+      <polygon points="-120,200 -190,170 -150,110 -90,130" fill="#0f172a" stroke="#1e293b" stroke-width="1.5" />
+
+      <!-- Classic Mallard Silver Collar Band (Data Pipeline Ring) -->
+      <polygon points="0,140 90,130 70,85 0,90" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5" />
+      <polygon points="0,140 -90,130 -70,85 0,90" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5" />
+      <polygon points="90,130 150,110 135,70 70,85" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+      <polygon points="-90,130 -150,110 -135,70 -70,85" fill="#94a3b8" stroke="#64748b" stroke-width="1.5" />
+      <polygon points="150,110 200,90 170,55 135,70" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5" />
+      <polygon points="-150,110 -200,90 -170,55 -135,70" fill="#64748b" stroke="#475569" stroke-width="1.5" />
+
+      <!-- Mallard Emerald Head & Neck Facets -->
+      <!-- Lower Throat / Cheek Facets -->
+      <polygon points="0,90 70,85 55,25 0,30" fill="#047857" stroke="#059669" stroke-width="1.5" />
+      <polygon points="0,90 -70,85 -55,25 0,30" fill="#064e3b" stroke="#047857" stroke-width="1.5" />
+      <polygon points="70,85 135,70 115,10 55,25" fill="#059669" stroke="#10b981" stroke-width="1.5" />
+      <polygon points="-70,85 -135,70 -115,10 -55,25" fill="#022c22" stroke="#064e3b" stroke-width="1.5" />
+      <polygon points="135,70 170,55 160,-5 115,10" fill="#10b981" stroke="#34d399" stroke-width="1.5" />
+      <polygon points="-135,70 -170,55 -160,-5 -115,10" fill="#064e3b" stroke="#047857" stroke-width="1.5" />
+      <polygon points="170,55 220,-50 175,-30 160,-5" fill="#047857" stroke="#059669" stroke-width="1.5" />
+      <polygon points="-170,55 -220,-50 -175,-30 -160,-5" fill="#022c22" stroke="#064e3b" stroke-width="1.5" />
+
+      <!-- Mid-Cheek & Temple Facets -->
+      <polygon points="115,10 160,-5 175,-30 135,-65 80,-40" fill="#059669" stroke="#10b981" stroke-width="1.5" />
+      <polygon points="-115,10 -160,-5 -175,-30 -135,-65 -80,-40" fill="#064e3b" stroke="#047857" stroke-width="1.5" />
+      <polygon points="55,25 115,10 80,-40 0,-30" fill="#10b981" stroke="#34d399" stroke-width="1.5" />
+      <polygon points="-55,25 -115,10 -80,-40 0,-30" fill="#047857" stroke="#059669" stroke-width="1.5" />
+
+      <!-- Upper Head / Crown Facets -->
+      <polygon points="0,-280 110,-230 65,-160 0,-180" fill="#10b981" stroke="#34d399" stroke-width="1.5" />
+      <polygon points="0,-280 -110,-230 -65,-160 0,-180" fill="#047857" stroke="#059669" stroke-width="1.5" />
+      <polygon points="110,-230 175,-150 130,-115 65,-160" fill="#059669" stroke="#10b981" stroke-width="1.5" />
+      <polygon points="-110,-230 -175,-150 -130,-115 -65,-160" fill="#064e3b" stroke="#047857" stroke-width="1.5" />
+      <polygon points="175,-150 220,-50 175,-30 135,-65 130,-115" fill="#047857" stroke="#059669" stroke-width="1.5" />
+      <polygon points="-175,-150 -220,-50 -175,-30 -135,-65 -130,-115" fill="#022c22" stroke="#064e3b" stroke-width="1.5" />
+
+      <!-- Forehead Center Facets -->
+      <polygon points="0,-180 65,-160 50,-100 0,-110" fill="#34d399" stroke="#6ee7b7" stroke-width="1.5" />
+      <polygon points="0,-180 -65,-160 -50,-100 0,-110" fill="#059669" stroke="#10b981" stroke-width="1.5" />
+      <polygon points="0,-110 50,-100 40,-50 0,-55" fill="#10b981" stroke="#34d399" stroke-width="1.5" />
+      <polygon points="0,-110 -50,-100 -40,-50 0,-55" fill="#047857" stroke="#059669" stroke-width="1.5" />
+
+      <!-- Eye Socket & Brow Facets (Negative space around optic) -->
+      <polygon points="65,-160 130,-115 90,-100 50,-100" fill="#047857" stroke="#059669" stroke-width="1.5" />
+      <polygon points="-65,-160 -130,-115 -90,-100 -50,-100" fill="#022c22" stroke="#064e3b" stroke-width="1.5" />
+      <polygon points="90,-100 130,-115 135,-65 80,-40" fill="#064e3b" stroke="#047857" stroke-width="1.5" />
+      <polygon points="-90,-100 -130,-115 -135,-65 -80,-40" fill="#022c22" stroke="#064e3b" stroke-width="1.5" />
+
+      <!-- Electric Cyan Almond Optics (Intelligent Predator/Observer Gaze) -->
+      <!-- Right Eye -->
+      <polygon points="92,-105 124,-112 118,-92 90,-88" fill="#000000" stroke="#00f5ff" stroke-width="2.5" />
+      <polygon points="98,-103 118,-107 114,-94 96,-91" fill="url(#cyan-optic)" />
+      <circle cx="108" cy="-100" r="3" fill="#ffffff" />
+
+      <!-- Left Eye -->
+      <polygon points="-92,-105 -124,-112 -118,-92 -90,-88" fill="#000000" stroke="#00f5ff" stroke-width="2.5" />
+      <polygon points="-98,-103 -118,-107 -114,-94 -96,-91" fill="url(#cyan-optic)" />
+      <circle cx="-108" cy="-100" r="3" fill="#ffffff" />
+
+      <!-- Architectural Amber Bill (The Columnar Query Engine Aperture) -->
+      <!-- Bridge / Base of Bill -->
+      <polygon points="0,-55 40,-50 55,-10 0,0" fill="#fde047" stroke="#f59e0b" stroke-width="1.5" />
+      <polygon points="0,-55 -40,-50 -55,-10 0,0" fill="#f59e0b" stroke="#d97706" stroke-width="1.5" />
+
+      <!-- Upper Bill Flanks -->
+      <polygon points="55,-10 80,-40 75,40 50,45" fill="#f59e0b" stroke="#d97706" stroke-width="1.5" />
+      <polygon points="-55,-10 -80,-40 -75,40 -50,45" fill="#d97706" stroke="#b45309" stroke-width="1.5" />
+
+      <!-- Mid Bill Core -->
+      <polygon points="0,0 55,-10 50,45 0,55" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5" />
+      <polygon points="0,0 -55,-10 -50,45 0,55" fill="#ea580c" stroke="#c2410c" stroke-width="1.5" />
+
+      <!-- Lower Bill Taper / Aperture Edge -->
+      <polygon points="0,55 50,45 60,95 0,115" fill="#f59e0b" stroke="#d97706" stroke-width="1.5" />
+      <polygon points="0,55 -50,45 -60,95 0,115" fill="#c2410c" stroke="#9a3412" stroke-width="1.5" />
+      <polygon points="50,45 75,40 68,90 60,95" fill="#d97706" stroke="#b45309" stroke-width="1.5" />
+      <polygon points="-50,45 -75,40 -68,90 -60,95" fill="#9a3412" stroke="#7c2d12" stroke-width="1.5" />
+
+      <!-- Bill Tip Aperture (Culmen / Nail) -->
+      <polygon points="0,115 25,108 0,135 -25,108" fill="#0f172a" stroke="#00f5ff" stroke-width="2" />
+      <circle cx="0" cy="120" r="3" fill="#00f5ff" />
+
+    </g>
+  </g>
+</svg>
