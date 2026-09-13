@@ -1,5 +1,5 @@
 import { getDuckDb, getDuckDbConnection } from './duckdbWorker';
-import { QueryResult, TableSchema } from './types';
+import { QueryResult, TableSchema, ExplainResult, ColumnStats, ColumnTopValue } from './types';
 import * as arrow from 'apache-arrow';
 
 /**
@@ -23,12 +23,11 @@ export function normalizeValue(val: unknown): unknown {
     if (Array.isArray(val)) {
       return val.map(normalizeValue);
     }
-    // Handle Arrow Vector/Struct
     if (val && typeof (val as { toJSON?: () => unknown }).toJSON === 'function') {
       try {
         return (val as { toJSON: () => unknown }).toJSON();
       } catch {
-        // Fallback string conversion
+        // Fallback
       }
     }
     const result: Record<string, unknown> = {};
@@ -66,7 +65,6 @@ export async function executeQuery(query: string): Promise<QueryResult> {
     const rows: Record<string, unknown>[] = [];
     const numRows = arrowTable.numRows;
 
-    // Zero-overhead extraction from Arrow columns
     for (let r = 0; r < numRows; r++) {
       const rowObj: Record<string, unknown> = {};
       for (let c = 0; c < columns.length; c++) {
@@ -105,13 +103,127 @@ export async function executeQuery(query: string): Promise<QueryResult> {
 }
 
 /**
+ * Runs an EXPLAIN or EXPLAIN ANALYZE on a query to inspect the execution plan tree.
+ */
+export async function explainQuery(query: string): Promise<ExplainResult> {
+  const conn = await getDuckDbConnection();
+  const startTime = performance.now();
+  const cleanSql = query.replace(/;+\s*$/, '');
+
+  let planText = '';
+
+  try {
+    const table = await conn.query(`EXPLAIN ANALYZE ${cleanSql};`);
+    const numRows = table.numRows;
+    const lines: string[] = [];
+    for (let i = 0; i < numRows; i++) {
+      const val = table.getChildAt(1)?.get(i) ?? table.getChildAt(0)?.get(i);
+      lines.push(String(val));
+    }
+    planText = lines.join('\n');
+  } catch {
+    // Fallback to regular EXPLAIN
+    const table = await conn.query(`EXPLAIN ${cleanSql};`);
+    const numRows = table.numRows;
+    const lines: string[] = [];
+    for (let i = 0; i < numRows; i++) {
+      const val = table.getChildAt(1)?.get(i) ?? table.getChildAt(0)?.get(i);
+      lines.push(String(val));
+    }
+    planText = lines.join('\n');
+  }
+
+  const endTime = performance.now();
+  return {
+    query,
+    planText,
+    executionTimeMs: Math.round((endTime - startTime) * 100) / 100,
+  };
+}
+
+/**
+ * Computes statistical profiling details for a specific column in a table.
+ */
+export async function fetchColumnStats(tableName: string, columnName: string, colType = ''): Promise<ColumnStats> {
+  const conn = await getDuckDbConnection();
+  const safeTable = `"${tableName.replace(/"/g, '""')}"`;
+  const safeCol = `"${columnName.replace(/"/g, '""')}"`;
+
+  const isNumeric = /int|double|float|decimal|numeric|real/i.test(colType);
+
+  let summarySql = `
+    SELECT 
+      count(*)::BIGINT AS total_cnt,
+      count(${safeCol})::BIGINT AS non_null_cnt,
+      count(DISTINCT ${safeCol})::BIGINT AS distinct_cnt
+  `;
+
+  if (isNumeric) {
+    summarySql += `,
+      round(min(${safeCol})::DOUBLE, 2) AS min_val,
+      round(max(${safeCol})::DOUBLE, 2) AS max_val,
+      round(avg(${safeCol})::DOUBLE, 2) AS avg_val
+    `;
+  }
+
+  summarySql += ` FROM ${safeTable};`;
+
+  const summaryRes = await conn.query(summarySql);
+  const totalCount = Number(summaryRes.getChildAt(0)?.get(0) ?? 0);
+  const nonNullCount = Number(summaryRes.getChildAt(1)?.get(0) ?? 0);
+  const distinctCount = Number(summaryRes.getChildAt(2)?.get(0) ?? 0);
+  const nullCount = Math.max(0, totalCount - nonNullCount);
+
+  let min: unknown;
+  let max: unknown;
+  let avg: unknown;
+
+  if (isNumeric) {
+    min = summaryRes.getChildAt(3)?.get(0);
+    max = summaryRes.getChildAt(4)?.get(0);
+    avg = summaryRes.getChildAt(5)?.get(0);
+  }
+
+  // Top 5 most frequent values
+  const topRes = await conn.query(`
+    SELECT 
+      ${safeCol}::VARCHAR AS val,
+      count(*)::BIGINT AS cnt
+    FROM ${safeTable}
+    WHERE ${safeCol} IS NOT NULL
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 5;
+  `);
+
+  const topValues: ColumnTopValue[] = [];
+  for (let i = 0; i < topRes.numRows; i++) {
+    const valStr = String(topRes.getChildAt(0)?.get(i) ?? 'null');
+    const cnt = Number(topRes.getChildAt(1)?.get(i) ?? 0);
+    const percentage = totalCount > 0 ? Math.round((cnt / totalCount) * 1000) / 10 : 0;
+    topValues.push({ value: valStr, count: cnt, percentage });
+  }
+
+  return {
+    columnName,
+    type: colType,
+    totalCount,
+    nullCount,
+    distinctCount,
+    min,
+    max,
+    avg,
+    topValues,
+  };
+}
+
+/**
  * Inspects the current catalog and lists all registered tables, views, and schemas.
  */
 export async function fetchCatalogTables(): Promise<TableSchema[]> {
   try {
     const conn = await getDuckDbConnection();
     
-    // Query system catalog for base tables and views
     const tablesResult = await conn.query(`
       SELECT 
         table_name, 
@@ -128,7 +240,6 @@ export async function fetchCatalogTables(): Promise<TableSchema[]> {
       const tableName = String(tablesResult.getChildAt(0)?.get(i));
       const tableType = String(tablesResult.getChildAt(1)?.get(i)) as 'BASE TABLE' | 'VIEW';
 
-      // Inspect column definitions
       const columnsResult = await conn.query(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns
@@ -145,13 +256,12 @@ export async function fetchCatalogTables(): Promise<TableSchema[]> {
         });
       }
 
-      // Count rows safely
       let rowCount = 0;
       try {
         const countRes = await conn.query(`SELECT count(*)::BIGINT AS cnt FROM "${tableName.replace(/"/g, '""')}"`);
         rowCount = Number(countRes.getChildAt(0)?.get(0) ?? 0);
       } catch {
-        // May be a dynamic view
+        // dynamic view
       }
 
       tables.push({
@@ -177,7 +287,6 @@ export async function exportQueryToParquet(query: string): Promise<Uint8Array> {
   const conn = await getDuckDbConnection();
   const tempFile = `export_${Date.now()}.parquet`;
 
-  // Use DuckDB native COPY statement
   const copySql = `COPY (${query.replace(/;+\s*$/, '')}) TO '${tempFile}' (FORMAT PARQUET, COMPRESSION 'ZSTD');`;
   await conn.query(copySql);
 

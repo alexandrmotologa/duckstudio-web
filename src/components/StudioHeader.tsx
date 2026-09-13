@@ -8,7 +8,8 @@ import {
   Github,
   Play,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Globe
 } from 'lucide-react';
 import { EngineStatus } from '../engine/duckdbWorker';
 
@@ -18,6 +19,7 @@ interface StudioHeaderProps {
   onRunQuery: () => void;
   onOpenHistory: () => void;
   onOpenVisualizer: () => void;
+  onOpenRemoteUrl: () => void;
   onDropFiles: (files: FileList | File[]) => void;
   onLoadSample: (sampleName: string) => void;
   hasResults: boolean;
@@ -29,6 +31,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   onRunQuery,
   onOpenHistory,
   onOpenVisualizer,
+  onOpenRemoteUrl,
   onDropFiles,
   onLoadSample,
   hasResults,
@@ -89,7 +92,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
       </div>
 
-      {/* Center Controls: Run, Samples, Upload */}
+      {/* Center Controls: Run, Samples, Upload, Remote URL */}
       <div className="flex items-center space-x-2">
         {/* Execute Button */}
         <button
@@ -100,7 +103,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
               : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30 hover:shadow-emerald-900/50'
           }`}
-          title="Execute Query (Ctrl + Enter / Cmd + Enter)"
+          title="Execute Query or Selection (Ctrl + Enter / Cmd + Enter)"
         >
           <Play className={`w-3.5 h-3.5 fill-current ${isExecuting ? 'animate-spin' : ''}`} />
           <span>{isExecuting ? 'Running...' : 'Run Query'}</span>
@@ -115,7 +118,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           ref={fileInputRef}
           onChange={handleFileChange}
           multiple
-          accept=".parquet,.pq,.csv,.tsv,.json,.jsonl,.ndjson,.arrow,.feather"
+          accept=".parquet,.pq,.csv,.tsv,.json,.jsonl,.ndjson,.arrow,.feather,.xlsx,.xls"
           className="hidden"
         />
 
@@ -123,10 +126,20 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <button
           onClick={() => fileInputRef.current?.click()}
           className="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
-          title="Open Parquet, CSV, or JSON file"
+          title="Open Parquet, CSV, JSON, Arrow, or Excel files"
         >
           <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
           <span>Import Files</span>
+        </button>
+
+        {/* Remote URL Button */}
+        <button
+          onClick={onOpenRemoteUrl}
+          className="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+          title="Query remote URL dataset via HTTP/HTTPS"
+        >
+          <Globe className="w-3.5 h-3.5 text-blue-400" />
+          <span>Remote URL</span>
         </button>
 
         {/* Sample Datasets Dropdown */}

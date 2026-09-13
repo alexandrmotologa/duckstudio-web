@@ -179,9 +179,10 @@ export function useDuckDb() {
 
       for (const file of fileList) {
         try {
-          const record = await ingestFile(file);
-          setIngestedFiles((prev) => [record, ...prev]);
-          showNotification(`Registered table "${record.tableName}" from ${record.name}`, 'success');
+          const records = await ingestFile(file);
+          setIngestedFiles((prev) => [...records, ...prev]);
+          const tableNames = records.map((r) => r.tableName).join(', ');
+          showNotification(`Registered table(s) "${tableNames}" from ${file.name}`, 'success');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           showNotification(`Failed to ingest ${file.name}: ${msg}`, 'error');

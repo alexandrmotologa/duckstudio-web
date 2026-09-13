@@ -58,6 +58,8 @@ describe('File Name and Format Detection', () => {
     expect(detectFormat('payload.json')).toBe('json');
     expect(detectFormat('stream.ndjson')).toBe('json');
     expect(detectFormat('table.arrow')).toBe('arrow');
+    expect(detectFormat('spreadsheet.xlsx')).toBe('excel');
+    expect(detectFormat('legacy.xls')).toBe('excel');
     expect(detectFormat('unknown.bin')).toBe('unknown');
   });
 });

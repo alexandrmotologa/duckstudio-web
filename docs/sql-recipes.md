@@ -12,6 +12,15 @@ Generate min, max, average, null counts, and approximate quantiles across every 
 SUMMARIZE ecommerce_orders;
 ```
 
+### Inspect physical execution plan (EXPLAIN ANALYZE)
+
+```sql
+EXPLAIN ANALYZE 
+SELECT product_category, sum(total_amount) 
+FROM ecommerce_orders 
+GROUP BY 1;
+```
+
 ### Inspect schema metadata
 
 ```sql

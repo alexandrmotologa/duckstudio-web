@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   X,
   BarChart2,
   TrendingUp,
   PieChart as PieIcon,
   Activity,
-  Maximize2
+  Maximize2,
+  Image as ImageIcon,
+  FileCode
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,12 +39,11 @@ const PALETTE = ['#F59E0B', '#10B981', '#06B6D4', '#8B5CF6', '#F43F5E', '#3B82F6
 
 export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClose }) => {
   const [chartType, setChartType] = useState<ChartType>('bar');
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
-  // Detect candidates for X (dimensions) and Y (metrics)
   const { numericCols, allCols } = useMemo(() => {
     const all = result.columns;
     const numCols = all.filter((col) => {
-      // Check if at least 70% of non-null values are numbers
       let count = 0;
       let valid = 0;
       for (const r of result.rows.slice(0, 50)) {
@@ -63,7 +64,6 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
   const [xAxisCol, setXAxisCol] = useState<string>(defaultX);
   const [yAxisCol, setYAxisCol] = useState<string>(defaultY);
 
-  // Prepare clean chart data
   const chartData = useMemo(() => {
     return result.rows.slice(0, 100).map((row) => {
       const xVal = row[xAxisCol];
@@ -75,7 +75,6 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
     });
   }, [result, xAxisCol, yAxisCol]);
 
-  // Aggregate stats
   const stats = useMemo(() => {
     const values = chartData.map((d) => Number(d[yAxisCol]) || 0);
     if (!values.length) return null;
@@ -90,6 +89,75 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
       min: Math.round(min * 100) / 100,
     };
   }, [chartData, yAxisCol]);
+
+  // Download SVG
+  const handleDownloadSvg = () => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+    const svgElem = container.querySelector('svg');
+    if (!svgElem) return;
+
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgElem);
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `duckstudio_chart_${Date.now()}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Download PNG
+  const handleDownloadPng = () => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+    const svgElem = container.querySelector('svg');
+    if (!svgElem) return;
+
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgElem);
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+
+    const rect = svgElem.getBoundingClientRect();
+    const width = Math.max(rect.width, 800);
+    const height = Math.max(rect.height, 450);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#0B0F17';
+    ctx.fillRect(0, 0, width, height);
+
+    const img = new Image();
+    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((pngBlob) => {
+        if (!pngBlob) return;
+        const pngUrl = URL.createObjectURL(pngBlob);
+        const link = document.createElement('a');
+        link.href = pngUrl;
+        link.download = `duckstudio_chart_${Date.now()}.png`;
+        link.click();
+        URL.revokeObjectURL(pngUrl);
+        URL.revokeObjectURL(url);
+      });
+    };
+    img.src = url;
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -108,12 +176,32 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDownloadPng}
+              className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+              title="Download as PNG"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+              <span>PNG</span>
+            </button>
+
+            <button
+              onClick={handleDownloadSvg}
+              className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+              title="Download as vector SVG"
+            >
+              <FileCode className="w-3.5 h-3.5 text-amber-400" />
+              <span>SVG</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors ml-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Chart Configuration Toolbar */}
@@ -202,7 +290,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
         </div>
 
         {/* Chart Canvas Area */}
-        <div className="flex-1 p-5 bg-[#0B0F17] flex flex-col min-h-0">
+        <div ref={chartContainerRef} className="flex-1 p-5 bg-[#0B0F17] flex flex-col min-h-0">
           <div className="flex-1 w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'bar' ? (

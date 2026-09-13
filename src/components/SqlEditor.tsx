@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
+import type { editor, IDisposable, Position } from 'monaco-editor';
 import { format } from 'sql-formatter';
 import {
   Play,
@@ -8,19 +9,22 @@ import {
   X,
   Code2,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Network
 } from 'lucide-react';
-import { EditorTab } from '../engine/types';
+import { EditorTab, TableSchema } from '../engine/types';
 
 interface SqlEditorProps {
   tabs: EditorTab[];
   activeTabId: string;
+  tables: TableSchema[];
   onSelectTab: (tabId: string) => void;
   onAddTab: () => void;
   onCloseTab: (tabId: string) => void;
   query: string;
   onChangeQuery: (value: string) => void;
-  onRunQuery: () => void;
+  onRunQuery: (selectedSql?: string) => void;
+  onExplainQuery: (sqlToExplain: string) => void;
   isExecuting: boolean;
 }
 
@@ -47,18 +51,51 @@ const SNIPPETS = [
   },
 ];
 
+const DUCKDB_FUNCTIONS = [
+  { label: 'SUMMARIZE', detail: 'DuckDB statistical profiler for all columns' },
+  { label: 'COLUMNS(*)', detail: 'Dynamic multi-column expression' },
+  { label: 'time_bucket', detail: 'time_bucket(INTERVAL, timestamp)' },
+  { label: 'arg_max', detail: 'arg_max(arg, val) - returns arg for max val' },
+  { label: 'arg_min', detail: 'arg_min(arg, val) - returns arg for min val' },
+  { label: 'quantile_cont', detail: 'quantile_cont(col, 0.5) - median or percentile' },
+  { label: 'approx_count_distinct', detail: 'HyperLogLog distinct estimate' },
+  { label: 'unnest', detail: 'unnest(list_or_array) - unrolls lists into rows' },
+  { label: 'string_split', detail: 'string_split(text, regex_or_delim)' },
+  { label: 'date_trunc', detail: 'date_trunc(part, date_or_time)' },
+  { label: 'QUALIFY', detail: 'Filter window function expressions directly' },
+];
+
 export const SqlEditor: React.FC<SqlEditorProps> = ({
   tabs,
   activeTabId,
+  tables,
   onSelectTab,
   onAddTab,
   onCloseTab,
   query,
   onChangeQuery,
   onRunQuery,
+  onExplainQuery,
   isExecuting,
 }) => {
   const [snippetsOpen, setSnippetsOpen] = useState(false);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const completionDisposableRef = useRef<IDisposable | null>(null);
+
+  // Get active text or selected text
+  const getQueryToRun = () => {
+    const ed = editorRef.current;
+    if (ed) {
+      const selection = ed.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = ed.getModel()?.getValueInRange(selection);
+        if (selectedText && selectedText.trim()) {
+          return selectedText.trim();
+        }
+      }
+    }
+    return query.trim();
+  };
 
   const handleFormatSql = () => {
     try {
@@ -70,18 +107,95 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
       });
       onChangeQuery(formatted);
     } catch {
-      // ignore formatting errors for non-standard SQL
+      // ignore
     }
   };
 
-  const handleEditorDidMount: OnMount = (editor, monaco) => {
-    // Add command for Cmd+Enter / Ctrl+Enter
-    editor.addCommand(
+  const handleRun = () => {
+    const toRun = getQueryToRun();
+    onRunQuery(toRun);
+  };
+
+  const handleExplain = () => {
+    const toRun = getQueryToRun();
+    onExplainQuery(toRun);
+  };
+
+  // Register or update Monaco autocomplete items when tables change
+  useEffect(() => {
+    // Monaco completion items will be registered in handleEditorDidMount or dynamic provider
+  }, [tables]);
+
+  const handleEditorDidMount: OnMount = (ed, monaco) => {
+    editorRef.current = ed;
+
+    // Keybinding Ctrl+Enter or Cmd+Enter
+    ed.addCommand(
       monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
       () => {
-        onRunQuery();
+        handleRun();
       }
     );
+
+    // Register custom schema-aware completion provider
+    if (completionDisposableRef.current) {
+      completionDisposableRef.current.dispose();
+    }
+
+    completionDisposableRef.current = monaco.languages.registerCompletionItemProvider('sql', {
+      provideCompletionItems: (model: editor.ITextModel, position: Position) => {
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions: Array<{
+          label: string;
+          kind: number;
+          insertText: string;
+          detail: string;
+          range: typeof range;
+        }> = [];
+
+        // 1. Loaded Tables
+        tables.forEach((t) => {
+          suggestions.push({
+            label: t.name,
+            kind: monaco.languages.CompletionItemKind.Class,
+            insertText: `"${t.name}"`,
+            detail: `Table (${t.columns.length} cols, ${t.rowCount ?? 0} rows)`,
+            range,
+          });
+
+          // 2. Table Columns
+          t.columns.forEach((col) => {
+            suggestions.push({
+              label: col.name,
+              kind: monaco.languages.CompletionItemKind.Field,
+              insertText: `"${col.name}"`,
+              detail: `${col.type} (from ${t.name})`,
+              range,
+            });
+          });
+        });
+
+        // 3. DuckDB Functions
+        DUCKDB_FUNCTIONS.forEach((fn) => {
+          suggestions.push({
+            label: fn.label,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: fn.label,
+            detail: fn.detail,
+            range,
+          });
+        });
+
+        return { suggestions };
+      },
+    });
   };
 
   return (
@@ -177,15 +291,27 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
             <span>Format</span>
           </button>
 
-          {/* Run Button in Editor Header */}
+          {/* Explain Plan Button */}
           <button
-            onClick={onRunQuery}
+            onClick={handleExplain}
+            disabled={isExecuting}
+            className="px-2.5 py-1 rounded text-xs font-medium bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-800/50 flex items-center space-x-1 transition-colors"
+            title="Inspect Query Execution Plan (EXPLAIN)"
+          >
+            <Network className="w-3 h-3 text-purple-400" />
+            <span className="hidden sm:inline">Explain</span>
+          </button>
+
+          {/* Run Button */}
+          <button
+            onClick={handleRun}
             disabled={isExecuting}
             className={`px-3 py-1 rounded text-xs font-semibold flex items-center space-x-1.5 transition-all ${
               isExecuting
                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
             }`}
+            title="Run Query or Selected Lines (Ctrl+Enter)"
           >
             <Play className="w-3 h-3 fill-current" />
             <span>Run</span>

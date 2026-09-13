@@ -11,16 +11,17 @@
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.28.0",
-    "apache-arrow": "^17.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-virtual": "^3.13.0",
+    "apache-arrow": "^17.0.0",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "recharts": "^2.15.1",
     "sql-formatter": "^15.4.10",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.0.1"
+    "tailwind-merge": "^3.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^19.0.8",

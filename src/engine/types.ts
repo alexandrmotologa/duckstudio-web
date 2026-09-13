@@ -53,7 +53,31 @@ export interface ChartConfig {
 export interface IngestedFileRecord {
   name: string;
   size: number;
-  format: 'parquet' | 'csv' | 'json' | 'arrow' | 'unknown';
+  format: 'parquet' | 'csv' | 'json' | 'arrow' | 'excel' | 'unknown';
   tableName: string;
   loadedAt: number;
+}
+
+export interface ExplainResult {
+  query: string;
+  planText: string;
+  executionTimeMs: number;
+}
+
+export interface ColumnTopValue {
+  value: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ColumnStats {
+  columnName: string;
+  type: string;
+  totalCount: number;
+  nullCount: number;
+  distinctCount: number;
+  min?: unknown;
+  max?: unknown;
+  avg?: unknown;
+  topValues: ColumnTopValue[];
 }
