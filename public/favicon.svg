@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#0F172A"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#F59E0B" stroke-opacity="0.3" stroke-width="2"/>
+  <!-- Duck Body -->
+  <path d="M46 36C46 43.732 38.837 50 30 50C21.163 50 14 43.732 14 36C14 29.5 19.5 24 26 23.2V22C26 17.582 29.582 14 34 14C38.418 14 42 17.582 42 22C42 22.8 41.8 23.6 41.5 24.3C44.2 27.2 46 31.4 46 36Z" fill="#FBBF24"/>
+  <!-- Bill / Beak -->
+  <path d="M41 20H51C52.1 20 53 20.9 53 22C53 23.1 52.1 24 51 24H41.8C41.9 23.4 42 22.7 42 22C42 21.3 41.9 20.6 41 20Z" fill="#F97316"/>
+  <!-- Eye -->
+  <circle cx="37" cy="20" r="2.5" fill="#0F172A"/>
+  <circle cx="38" cy="19" r="0.8" fill="#FFFFFF"/>
+  <!-- Analytics Grid / Spark Wave -->
+  <path d="M18 42L25 37L32 41L42 31" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="31" r="2" fill="#10B981"/>
+</svg>

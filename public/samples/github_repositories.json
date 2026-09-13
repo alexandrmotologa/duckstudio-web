@@ -1,0 +1,12 @@
+[
+  {"repo": "duckdb/duckdb", "language": "C++", "stars": 24500, "forks": 1950, "open_issues": 1240, "topics": ["database", "olap", "analytics", "sql"], "created_year": 2018},
+  {"repo": "duckdb/duckdb-wasm", "language": "TypeScript", "stars": 4900, "forks": 380, "open_issues": 180, "topics": ["wasm", "webassembly", "duckdb", "sql"], "created_year": 2021},
+  {"repo": "apache/arrow", "language": "C++", "stars": 15800, "forks": 3600, "open_issues": 920, "topics": ["arrow", "columnar", "dataframe", "memory"], "created_year": 2016},
+  {"repo": "pola-rs/polars", "language": "Rust", "stars": 31200, "forks": 2100, "open_issues": 850, "topics": ["dataframe", "rust", "arrow", "analytics"], "created_year": 2020},
+  {"repo": "datafusion-contrib/datafusion", "language": "Rust", "stars": 6700, "forks": 1100, "open_issues": 430, "topics": ["sql", "query-engine", "apache-arrow"], "created_year": 2019},
+  {"repo": "clickhouse/clickhouse", "language": "C++", "stars": 37900, "forks": 6800, "open_issues": 2890, "topics": ["clickhouse", "olap", "columnar-database"], "created_year": 2016},
+  {"repo": "trinodb/trino", "language": "Java", "stars": 11200, "forks": 3300, "open_issues": 1420, "topics": ["sql", "distributed-systems", "big-data"], "created_year": 2012},
+  {"repo": "apache/spark", "language": "Scala", "stars": 40100, "forks": 27800, "open_issues": 3100, "topics": ["spark", "big-data", "analytics"], "created_year": 2010},
+  {"repo": "microsoft/monaco-editor", "language": "TypeScript", "stars": 39800, "forks": 3600, "open_issues": 840, "topics": ["editor", "vscode", "javascript"], "created_year": 2016},
+  {"repo": "vitejs/vite", "language": "TypeScript", "stars": 69400, "forks": 6200, "open_issues": 750, "topics": ["vite", "bundler", "esm", "frontend"], "created_year": 2020}
+]

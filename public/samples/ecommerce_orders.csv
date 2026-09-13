@@ -1,0 +1,51 @@
+order_id,order_date,customer_country,product_category,product_name,units,unit_price,discount,total_amount,payment_method,delivery_status
+1001,2025-01-02,US,Electronics,Mechanical Keyboard,2,119.99,0.10,215.98,Credit Card,Delivered
+1002,2025-01-03,DE,Electronics,Wireless Headphones,1,189.50,0.00,189.50,PayPal,Delivered
+1003,2025-01-04,FR,Apparel,Merino Wool Hoodie,3,75.00,0.15,191.25,Apple Pay,Delivered
+1004,2025-01-05,UK,Furniture,Ergonomic Desk Chair,1,349.00,0.05,331.55,Bank Transfer,Delivered
+1005,2025-01-05,US,Electronics,4K Gaming Monitor,1,499.99,0.20,399.99,Credit Card,Delivered
+1006,2025-01-06,JP,Fitness,Adjustable Dumbbells,2,129.00,0.00,258.00,Credit Card,Delivered
+1007,2025-01-07,CA,Books,Data Engineering Manual,5,45.00,0.10,202.50,PayPal,Delivered
+1008,2025-01-08,US,Apparel,Running Trail Jacket,2,95.00,0.00,190.00,Apple Pay,Delivered
+1009,2025-01-09,DE,Furniture,Standing Desk Frame,1,420.00,0.10,378.00,Bank Transfer,Delivered
+1010,2025-01-10,UK,Electronics,USB-C Docking Station,2,89.99,0.05,170.98,Credit Card,Delivered
+1011,2025-01-11,US,Fitness,Smart Fitness Watch,1,249.00,0.15,211.65,Apple Pay,Delivered
+1012,2025-01-12,FR,Books,Designing Data Systems,4,55.00,0.00,220.00,Credit Card,Delivered
+1013,2025-01-13,DE,Electronics,Noise Cancelling Earbuds,2,139.00,0.20,222.40,PayPal,Delivered
+1014,2025-01-14,US,Apparel,Merino Wool Socks 3-Pack,6,28.00,0.10,151.20,Credit Card,Delivered
+1015,2025-01-15,JP,Furniture,Monitor Arm Dual,2,99.50,0.05,189.05,Credit Card,Delivered
+1016,2025-01-16,UK,Fitness,Carbon Road Bike Helmet,1,165.00,0.00,165.00,Apple Pay,Delivered
+1017,2025-01-17,CA,Electronics,Mechanical Numpad,3,49.99,0.00,149.97,PayPal,Delivered
+1018,2025-01-18,US,Books,Advanced SQL Mastery,3,48.00,0.05,136.80,Credit Card,Delivered
+1019,2025-01-19,DE,Apparel,Waterproof Shell Jacket,1,180.00,0.10,162.00,Bank Transfer,Delivered
+1020,2025-01-20,FR,Electronics,Wireless Trackball,2,79.00,0.00,158.00,Credit Card,Delivered
+1021,2025-01-21,UK,Furniture,Acoustic Desk Screen,2,110.00,0.15,187.00,PayPal,Delivered
+1022,2025-01-22,US,Electronics,Ultrawide Curved Screen,1,799.00,0.25,599.25,Credit Card,Delivered
+1023,2025-01-23,JP,Books,High Performance Browser Networking,2,52.00,0.00,104.00,Apple Pay,Delivered
+1024,2025-01-24,DE,Fitness,Rowing Machine Resistance,1,580.00,0.10,522.00,Bank Transfer,In Transit
+1025,2025-01-25,CA,Apparel,Technical Fleece,2,85.00,0.05,161.50,Credit Card,In Transit
+1026,2025-01-26,US,Electronics,Studio Condenser Mic,1,149.00,0.00,149.00,PayPal,In Transit
+1027,2025-01-27,UK,Electronics,Webcam 4K HDR,2,129.99,0.10,233.98,Apple Pay,In Transit
+1028,2025-01-28,FR,Furniture,Leather Desk Mat,4,38.00,0.00,152.00,Credit Card,Shipped
+1029,2025-01-29,DE,Books,Database Internals,3,58.00,0.15,147.90,Bank Transfer,Shipped
+1030,2025-01-30,US,Fitness,Massage Recovery Gun,1,199.00,0.20,159.20,Credit Card,Shipped
+1031,2025-02-01,JP,Electronics,Portable DAC Amplifier,1,169.00,0.05,160.55,Apple Pay,Shipped
+1032,2025-02-02,CA,Apparel,Thermal Running Tights,2,65.00,0.00,130.00,PayPal,Shipped
+1033,2025-02-03,US,Furniture,Solid Walnut Tabletop,1,650.00,0.10,585.00,Credit Card,Processing
+1034,2025-02-04,UK,Electronics,Keycap Set PBT Dye-Sub,2,69.00,0.00,138.00,Credit Card,Processing
+1035,2025-02-05,DE,Fitness,Kettlebell 24kg,2,55.00,0.00,110.00,PayPal,Processing
+1036,2025-02-06,FR,Books,Modern Operating Systems,2,85.00,0.10,153.00,Bank Transfer,Processing
+1037,2025-02-07,US,Electronics,Thunderbolt 4 Cable,4,35.00,0.05,133.00,Apple Pay,Processing
+1038,2025-02-08,JP,Apparel,Lightweight Down Vest,1,120.00,0.15,102.00,Credit Card,Processing
+1039,2025-02-09,CA,Furniture,Under-Desk Cable Tray,3,32.00,0.00,96.00,PayPal,Processing
+1040,2025-02-10,US,Electronics,Smart Power Strip,3,42.00,0.10,113.40,Credit Card,Processing
+1041,2025-02-11,UK,Books,Clean Architecture,2,44.00,0.00,88.00,Apple Pay,Processing
+1042,2025-02-12,DE,Fitness,Speed Jump Rope Pro,3,29.00,0.00,87.00,PayPal,Processing
+1043,2025-02-13,FR,Electronics,Ergonomic Vertical Mouse,2,65.00,0.10,117.00,Credit Card,Processing
+1044,2025-02-14,US,Apparel,Merino Base Layer,2,89.00,0.20,142.40,Credit Card,Processing
+1045,2025-02-15,JP,Furniture,Lumbar Support Cushion,2,49.00,0.05,93.10,Apple Pay,Processing
+1046,2025-02-16,CA,Books,Site Reliability Engineering,2,54.00,0.00,108.00,PayPal,Processing
+1047,2025-02-17,DE,Electronics,USB Audio Interface,1,159.00,0.10,143.10,Bank Transfer,Processing
+1048,2025-02-18,UK,Fitness,Gymnastic Wood Rings,2,42.00,0.00,84.00,Credit Card,Processing
+1049,2025-02-19,US,Furniture,LED Monitor Light Bar,2,79.00,0.15,134.30,Apple Pay,Processing
+1050,2025-02-20,FR,Electronics,Bluetooth Low Energy Beacon,5,25.00,0.00,125.00,Credit Card,Processing
