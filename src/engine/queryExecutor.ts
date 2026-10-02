@@ -25,7 +25,14 @@ export function normalizeValue(val: unknown): unknown {
     }
     if (val && typeof (val as { toJSON?: () => unknown }).toJSON === 'function') {
       try {
-        return (val as { toJSON: () => unknown }).toJSON();
+        const jsonVal = (val as { toJSON: () => unknown }).toJSON();
+        if (typeof jsonVal === 'string' && !isNaN(Number(jsonVal)) && jsonVal.trim() !== '') {
+          const num = Number(jsonVal);
+          if (num <= Number.MAX_SAFE_INTEGER && num >= Number.MIN_SAFE_INTEGER) {
+            return num;
+          }
+        }
+        return jsonVal;
       } catch {
         // Fallback
       }

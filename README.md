@@ -84,6 +84,13 @@ Load remote Parquet, CSV, or Excel files from public URLs without manual downloa
   <img src="docs/images/screenshot_remote_url.png?raw=true" alt="Remote URL Ingestion" width="880" style="border-radius: 8px; border: 1px solid #1e293b;" />
 </p>
 
+### Shortcuts & engine telemetry
+Inspect keyboard shortcuts, DuckDB WebAssembly build status, and active row counts:
+
+<p align="center">
+  <img src="docs/images/screenshot_shortcuts.png?raw=true" alt="Shortcuts and DuckDB Engine Overview" width="880" style="border-radius: 8px; border: 1px solid #1e293b;" />
+</p>
+
 ---
 
 ## Privacy and security

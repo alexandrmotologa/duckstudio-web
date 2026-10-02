@@ -121,7 +121,7 @@ export async function ingestRemoteUrl(url: string, customTableName?: string): Pr
   const db = await getDuckDb();
   const conn = await getDuckDbConnection();
 
-  const parsedUrl = new URL(url);
+  const parsedUrl = new URL(url, typeof window !== 'undefined' ? window.location.href : 'http://localhost');
   const pathname = parsedUrl.pathname;
   const rawFileName = pathname.substring(pathname.lastIndexOf('/') + 1) || 'remote_data';
   const tableName = customTableName ? sanitizeTableName(customTableName) : sanitizeTableName(rawFileName);
