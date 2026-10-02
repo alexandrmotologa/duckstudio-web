@@ -8,6 +8,8 @@ import {
 import {
   executeQuery,
   fetchCatalogTables,
+  dropCatalogTable,
+  fetchDuckDbInfo,
 } from '../engine/queryExecutor';
 import { ingestFile, loadSampleDataset } from '../engine/fileLoader';
 import {
@@ -16,6 +18,7 @@ import {
   QueryHistoryItem,
   EditorTab,
   IngestedFileRecord,
+  DuckDbEngineInfo,
 } from '../engine/types';
 
 const STORAGE_KEY_HISTORY = 'duckstudio_query_history_v1';
@@ -39,6 +42,7 @@ ORDER BY total_revenue DESC;
 export function useDuckDb() {
   const [engineStatus, setEngineStatus] = useState<EngineStatus>('uninitialized');
   const [tables, setTables] = useState<TableSchema[]>([]);
+  const [engineInfo, setEngineInfo] = useState<DuckDbEngineInfo | null>(null);
   const [activeTabId, setActiveTabId] = useState<string>('tab-1');
   const [tabs, setTabs] = useState<EditorTab[]>(() => {
     try {
@@ -94,6 +98,8 @@ export function useDuckDb() {
   const refreshTables = useCallback(async () => {
     const list = await fetchCatalogTables();
     setTables(list);
+    const info = await fetchDuckDbInfo();
+    setEngineInfo(info);
   }, []);
 
   // Initialize engine and automatically load sample dataset
@@ -154,8 +160,8 @@ export function useDuckDb() {
         if (result.error) {
           showNotification(`Query failed: ${result.error}`, 'error');
         } else {
-          // If query modified catalog (e.g. CREATE, DROP), refresh tables
-          if (/create|drop|alter|insert|delete|attach/i.test(query)) {
+          // If query modified catalog (e.g. CREATE, DROP, ALTER, INSERT), refresh tables
+          if (/create|drop|alter|insert|delete|attach|detach/i.test(query)) {
             await refreshTables();
           }
         }
@@ -167,6 +173,21 @@ export function useDuckDb() {
       }
     },
     [tabs, activeTabId, refreshTables, showNotification]
+  );
+
+  // Drop table / view
+  const dropTable = useCallback(
+    async (tableName: string, isView = false) => {
+      try {
+        await dropCatalogTable(tableName, isView);
+        await refreshTables();
+        showNotification(`Dropped ${isView ? 'view' : 'table'} "${tableName}" from DuckDB`, 'info');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        showNotification(`Failed to drop "${tableName}": ${msg}`, 'error');
+      }
+    },
+    [refreshTables, showNotification]
   );
 
   // File ingestion handler
@@ -201,6 +222,14 @@ export function useDuckDb() {
     );
   }, [activeTabId]);
 
+  const renameTab = useCallback((id: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    setTabs((prev) =>
+      prev.map((tab) => (tab.id === id ? { ...tab, title: trimmed } : tab))
+    );
+  }, []);
+
   const addTab = useCallback(() => {
     const newId = `tab-${Date.now()}`;
     const newIndex = tabs.length + 1;
@@ -217,16 +246,15 @@ export function useDuckDb() {
     setTabs((prev) => {
       if (prev.length <= 1) return prev;
       const filtered = prev.filter((t) => t.id !== id);
+      setActiveTabId((current) => {
+        if (current === id) {
+          return filtered[filtered.length - 1]?.id ?? filtered[0]?.id ?? 'tab-1';
+        }
+        return current;
+      });
       return filtered;
     });
-    setActiveTabId((current) => {
-      if (current === id) {
-        const remaining = tabs.filter((t) => t.id !== id);
-        return remaining[remaining.length - 1]?.id ?? 'tab-1';
-      }
-      return current;
-    });
-  }, [tabs]);
+  }, []);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
@@ -239,6 +267,7 @@ export function useDuckDb() {
 
   return {
     engineStatus,
+    engineInfo,
     tables,
     tabs,
     activeTabId,
@@ -250,8 +279,10 @@ export function useDuckDb() {
     notification,
     setActiveTabId,
     updateActiveTabQuery,
+    renameTab,
     addTab,
     closeTab,
+    dropTable,
     runQuery,
     refreshTables,
     handleDropFiles,

@@ -9,7 +9,8 @@ import {
   Play,
   Sparkles,
   ChevronDown,
-  Globe
+  Globe,
+  HelpCircle
 } from 'lucide-react';
 import { EngineStatus } from '../engine/duckdbWorker';
 
@@ -20,6 +21,7 @@ interface StudioHeaderProps {
   onOpenHistory: () => void;
   onOpenVisualizer: () => void;
   onOpenRemoteUrl: () => void;
+  onOpenShortcuts: () => void;
   onDropFiles: (files: FileList | File[]) => void;
   onLoadSample: (sampleName: string) => void;
   hasResults: boolean;
@@ -32,6 +34,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenHistory,
   onOpenVisualizer,
   onOpenRemoteUrl,
+  onOpenShortcuts,
   onDropFiles,
   onLoadSample,
   hasResults,
@@ -192,7 +195,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right Actions: Privacy Indicator, Visualizer, History, GitHub */}
+      {/* Right Actions: Privacy Indicator, Visualizer, History, Shortcuts, GitHub */}
       <div className="flex items-center space-x-2">
         {/* Privacy Verified Badge */}
         <div
@@ -226,6 +229,15 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         >
           <History className="w-4 h-4 text-slate-400" />
           <span className="hidden sm:inline">History</span>
+        </button>
+
+        {/* Shortcuts / Help Modal */}
+        <button
+          onClick={onOpenShortcuts}
+          className="p-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors flex items-center space-x-1"
+          title="Shortcuts & Engine Overview"
+        >
+          <HelpCircle className="w-4 h-4 text-amber-400" />
         </button>
 
         {/* GitHub Link */}

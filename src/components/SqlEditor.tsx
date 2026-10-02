@@ -10,7 +10,9 @@ import {
   Code2,
   ChevronDown,
   Sparkles,
-  Network
+  Network,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { EditorTab, TableSchema } from '../engine/types';
 
@@ -21,6 +23,7 @@ interface SqlEditorProps {
   onSelectTab: (tabId: string) => void;
   onAddTab: () => void;
   onCloseTab: (tabId: string) => void;
+  onRenameTab?: (tabId: string, newTitle: string) => void;
   query: string;
   onChangeQuery: (value: string) => void;
   onRunQuery: (selectedSql?: string) => void;
@@ -49,6 +52,10 @@ const SNIPPETS = [
     title: 'Table Profiler (SUMMARIZE)',
     sql: `SUMMARIZE ecommerce_orders;`,
   },
+  {
+    title: 'DuckDB System Version & Pragmas',
+    sql: `SELECT version() AS duckdb_version, current_setting('threads') AS threads, current_setting('memory_limit') AS memory;`,
+  },
 ];
 
 const DUCKDB_FUNCTIONS = [
@@ -63,6 +70,9 @@ const DUCKDB_FUNCTIONS = [
   { label: 'string_split', detail: 'string_split(text, regex_or_delim)' },
   { label: 'date_trunc', detail: 'date_trunc(part, date_or_time)' },
   { label: 'QUALIFY', detail: 'Filter window function expressions directly' },
+  { label: 'read_parquet', detail: 'read_parquet(url_or_file)' },
+  { label: 'read_csv_auto', detail: 'read_csv_auto(url_or_file)' },
+  { label: 'read_json_auto', detail: 'read_json_auto(url_or_file)' },
 ];
 
 export const SqlEditor: React.FC<SqlEditorProps> = ({
@@ -72,6 +82,7 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
   onSelectTab,
   onAddTab,
   onCloseTab,
+  onRenameTab,
   query,
   onChangeQuery,
   onRunQuery,
@@ -79,8 +90,16 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
   isExecuting,
 }) => {
   const [snippetsOpen, setSnippetsOpen] = useState(false);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const completionDisposableRef = useRef<IDisposable | null>(null);
+  const tablesRef = useRef(tables);
+
+  // Keep tablesRef current for autocomplete closure
+  useEffect(() => {
+    tablesRef.current = tables;
+  }, [tables]);
 
   // Get active text or selected text
   const getQueryToRun = () => {
@@ -121,15 +140,27 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
     onExplainQuery(toRun);
   };
 
-  // Register or update Monaco autocomplete items when tables change
-  useEffect(() => {
-    // Monaco completion items will be registered in handleEditorDidMount or dynamic provider
-  }, [tables]);
+  const startRenameTab = (tab: EditorTab, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingTabId(tab.id);
+    setEditTitle(tab.title);
+  };
+
+  const commitRenameTab = () => {
+    if (editingTabId && onRenameTab && editTitle.trim()) {
+      onRenameTab(editingTabId, editTitle.trim());
+    }
+    setEditingTabId(null);
+  };
+
+  const cancelRenameTab = () => {
+    setEditingTabId(null);
+  };
 
   const handleEditorDidMount: OnMount = (ed, monaco) => {
     editorRef.current = ed;
 
-    // Keybinding Ctrl+Enter or Cmd+Enter
+    // Keybinding Ctrl+Enter or Cmd+Enter to Run
     ed.addCommand(
       monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
       () => {
@@ -137,11 +168,20 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
       }
     );
 
-    // Register custom schema-aware completion provider
+    // Keybinding Shift+Alt+F / Ctrl+Shift+F to Format
+    ed.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
+      () => {
+        handleFormatSql();
+      }
+    );
+
+    // Dispose old provider if exists
     if (completionDisposableRef.current) {
       completionDisposableRef.current.dispose();
     }
 
+    // Register dynamic schema-aware completion provider using live tablesRef
     completionDisposableRef.current = monaco.languages.registerCompletionItemProvider('sql', {
       provideCompletionItems: (model: editor.ITextModel, position: Position) => {
         const word = model.getWordUntilPosition(position);
@@ -152,6 +192,7 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
           endColumn: word.endColumn,
         };
 
+        const currentTables = tablesRef.current;
         const suggestions: Array<{
           label: string;
           kind: number;
@@ -160,13 +201,13 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
           range: typeof range;
         }> = [];
 
-        // 1. Loaded Tables
-        tables.forEach((t) => {
+        // 1. Live Loaded Tables from catalog
+        currentTables.forEach((t) => {
           suggestions.push({
             label: t.name,
             kind: monaco.languages.CompletionItemKind.Class,
             insertText: `"${t.name}"`,
-            detail: `Table (${t.columns.length} cols, ${t.rowCount ?? 0} rows)`,
+            detail: `Table (${t.columns.length} cols, ${t.rowCount?.toLocaleString() ?? 0} rows)`,
             range,
           });
 
@@ -206,25 +247,66 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
         <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             const isActive = tab.id === activeTabId;
+            const isEditing = editingTabId === tab.id;
+
             return (
               <div
                 key={tab.id}
                 onClick={() => onSelectTab(tab.id)}
-                className={`group flex items-center space-x-2 px-3 py-1.5 rounded-t-md text-xs cursor-pointer border-t border-x transition-colors ${
+                onDoubleClick={(e) => startRenameTab(tab, e)}
+                className={`group flex items-center space-x-1.5 px-3 py-1.5 rounded-t-md text-xs cursor-pointer border-t border-x transition-colors ${
                   isActive
                     ? 'bg-[#0D131F] text-amber-400 border-slate-700 font-medium'
                     : 'bg-slate-900/60 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
+                title="Click to switch tab, double-click to rename"
               >
-                <Code2 className="w-3 h-3 text-slate-400 group-hover:text-amber-400" />
-                <span className="truncate max-w-[120px]">{tab.title}</span>
-                {tabs.length > 1 && (
+                <Code2 className="w-3 h-3 text-slate-400 group-hover:text-amber-400 shrink-0" />
+
+                {isEditing ? (
+                  <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRenameTab();
+                        if (e.key === 'Escape') cancelRenameTab();
+                      }}
+                      onBlur={commitRenameTab}
+                      className="w-24 px-1 py-0.5 bg-slate-950 border border-amber-500 rounded text-slate-100 text-xs focus:outline-none"
+                    />
+                    <button
+                      onClick={commitRenameTab}
+                      className="p-0.5 text-emerald-400 hover:text-emerald-300"
+                    >
+                      <Check className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="truncate max-w-[120px]">{tab.title}</span>
+                    {onRenameTab && (
+                      <button
+                        onClick={(e) => startRenameTab(tab, e)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-500 hover:text-slate-300 transition-opacity"
+                        title="Rename Tab"
+                      >
+                        <Edit2 className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {tabs.length > 1 && !isEditing && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onCloseTab(tab.id);
                     }}
-                    className="p-0.5 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-700"
+                    className="p-0.5 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-700 ml-1"
+                    title="Close tab"
                   >
                     <X className="w-2.5 h-2.5" />
                   </button>
@@ -285,7 +367,7 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
           <button
             onClick={handleFormatSql}
             className="px-2.5 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 flex items-center space-x-1 transition-colors"
-            title="Format SQL Query"
+            title="Format SQL Query (Shift + Alt + F)"
           >
             <AlignLeft className="w-3 h-3 text-cyan-400" />
             <span>Format</span>

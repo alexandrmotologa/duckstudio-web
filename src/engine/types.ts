@@ -81,3 +81,9 @@ export interface ColumnStats {
   avg?: unknown;
   topValues: ColumnTopValue[];
 }
+
+export interface DuckDbEngineInfo {
+  version: string;
+  tableCount: number;
+  totalRows: number;
+}

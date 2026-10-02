@@ -13,6 +13,7 @@ import { QueryResult } from '../engine/types';
 import {
   convertRowsToCsv,
   convertRowsToMarkdown,
+  convertRowsToTsv,
   exportQueryToParquet,
 } from '../engine/queryExecutor';
 
@@ -25,6 +26,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({ result, onNotify
   const [isOpen, setIsOpen] = useState(false);
   const [isExportingParquet, setIsExportingParquet] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
+  const [copiedTsv, setCopiedTsv] = useState(false);
 
   const downloadBlob = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob);
@@ -92,13 +94,11 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({ result, onNotify
 
   const handleCopyTsv = async () => {
     try {
-      const header = result.columns.join('\t');
-      const lines = result.rows.map((row) =>
-        result.columns.map((col) => String(row[col] ?? '')).join('\t')
-      );
-      const tsvStr = [header, ...lines].join('\n');
+      const tsvStr = convertRowsToTsv(result.columns, result.rows);
       await navigator.clipboard.writeText(tsvStr);
+      setCopiedTsv(true);
       onNotify('Copied TSV to clipboard (ready to paste into Excel/Sheets).', 'success');
+      setTimeout(() => setCopiedTsv(false), 2000);
       setIsOpen(false);
     } catch {
       onNotify('Failed to copy TSV to clipboard.', 'error');
@@ -177,7 +177,11 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({ result, onNotify
             onClick={handleCopyTsv}
             className="w-full text-left px-3 py-2 hover:bg-slate-800 flex items-center space-x-2 text-slate-200"
           >
-            <Copy className="w-3.5 h-3.5 text-slate-400" />
+            {copiedTsv ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-slate-400" />
+            )}
             <span>Copy as TSV (Excel)</span>
           </button>
         </div>

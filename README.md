@@ -32,15 +32,16 @@ DuckStudio Web runs DuckDB directly inside the browser using WebAssembly. It all
 - Local SQL engine: Runs DuckDB-Wasm in a dedicated Web Worker. Queries run against local memory and browser-managed buffers.
 - Multi-format ingestion: Ingests Parquet, CSV, TSV, JSON, JSON Lines, Arrow IPC, and Excel (`.xlsx` and `.xls`) spreadsheets via drag and drop.
 - Remote URL loader: Loads public datasets directly from HTTP or HTTPS URLs (HuggingFace, GitHub, S3) into DuckDB.
-- Schema explorer: Inspects registered tables, views, column types, and row counts with quick actions (`SELECT *`, `COUNT(*)`, `SUMMARIZE`).
-- Schema-aware Monaco SQL editor: Autocompletes active table names, column names with data types, and DuckDB analytical functions (`SUMMARIZE`, `COLUMNS(*)`, `time_bucket`, `arg_max`, `unnest`, `QUALIFY`).
+- Schema explorer & memory management: Inspects registered tables, views, column types, and row counts with quick actions (`SELECT *`, `COUNT(*)`, `SUMMARIZE`, `Copy identifier`) and drop table/view memory release.
+- Dynamic schema-aware Monaco editor: Live autocomplete for active tables, column definitions with data types, dynamic tab renaming, and DuckDB analytical functions (`SUMMARIZE`, `COLUMNS(*)`, `time_bucket`, `arg_max`, `unnest`, `QUALIFY`).
 - Partial execution: Highlights any block of SQL in the editor to run only the selected lines.
 - Resizable split-pane: Draggable divider between the editor and the results table, with one-click buttons to maximize the editor or grid.
-- Column statistics and profiling: Click any column header to view distinct counts, null counts, min, max, average, and top 5 frequent values with instant filter injection.
+- Column statistics and profiling: Click any column header to view distinct counts, null counts, min, max, average, and top 5 frequent values with syntax-aware SQL filter injection.
 - Visual query profiler: Inspects `EXPLAIN` and `EXPLAIN ANALYZE` physical execution trees to evaluate query performance.
-- Virtualized data grid: Renders 50,000+ rows smoothly using TanStack Virtual, with column sorting, text search filtering, and single-cell copy.
-- Interactive charting: Generates Bar, Line, Area, Scatter, and Pie charts from query result columns using Recharts, with one-click export to PNG and SVG images.
+- Virtualized data grid: Renders 50,000+ rows smoothly using TanStack Virtual, with synchronized column headers, sorting, text search filtering, single-cell copy, and row-level JSON/CSV export.
+- Interactive charting: Generates Bar, Line, Area, Scatter, Pie, and Donut charts from query results with custom color themes, Y-axis sorting, and one-click export to PNG and SVG images.
 - Client-side export: Downloads query results as CSV, JSON, or compressed Parquet files generated directly by DuckDB. Also supports copying as Markdown tables or TSV.
+- Shortcuts & engine telemetry: Dedicated modal with keyboard shortcuts, DuckDB WebAssembly build info, active table counts, and row totals.
 - Query history: Persists executed queries, execution durations, and row counts locally in browser storage.
 - Bundled sample datasets: Includes sample e-commerce and GitHub repository data for immediate testing.
 

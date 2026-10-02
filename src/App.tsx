@@ -8,8 +8,9 @@ import { VisualizerModal } from './components/VisualizerModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { RemoteUrlModal } from './components/RemoteUrlModal';
 import { ExplainModal } from './components/ExplainModal';
+import { ShortcutsModal } from './components/ShortcutsModal';
 import { loadSampleDataset, ingestRemoteUrl } from './engine/fileLoader';
-import { explainQuery } from './engine/queryExecutor';
+import { explainQuery, injectSqlFilter } from './engine/queryExecutor';
 import { ExplainResult } from './engine/types';
 import {
   PanelLeftClose,
@@ -26,6 +27,7 @@ import {
 export const App: React.FC = () => {
   const {
     engineStatus,
+    engineInfo,
     tables,
     tabs,
     activeTabId,
@@ -36,8 +38,10 @@ export const App: React.FC = () => {
     notification,
     setActiveTabId,
     updateActiveTabQuery,
+    renameTab,
     addTab,
     closeTab,
+    dropTable,
     runQuery,
     refreshTables,
     handleDropFiles,
@@ -49,6 +53,7 @@ export const App: React.FC = () => {
   const [visualizerOpen, setVisualizerOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [remoteUrlOpen, setRemoteUrlOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
 
   // Split-pane resizing state
@@ -156,28 +161,17 @@ export const App: React.FC = () => {
     }
   };
 
+  // Robust Filter Application using injectSqlFilter
   const handleApplyFilter = useCallback(
     (col: string, val: string, op: '=' | '!=') => {
-      const current = activeTab.query.trim();
-      const escapedVal = val.replace(/'/g, "''");
-      const filterClause = `"${col}" ${op} '${escapedVal}'`;
+      const current = activeTab.query;
+      const newQuery = injectSqlFilter(current, col, val, op);
 
-      let newQuery = '';
-      if (/WHERE/i.test(current)) {
-        newQuery = `${current} AND ${filterClause}`;
-      } else if (/GROUP BY/i.test(current)) {
-        newQuery = current.replace(/GROUP BY/i, `WHERE ${filterClause}\nGROUP BY`);
-      } else if (/ORDER BY/i.test(current)) {
-        newQuery = current.replace(/ORDER BY/i, `WHERE ${filterClause}\nORDER BY`);
-      } else if (/LIMIT/i.test(current)) {
-        newQuery = current.replace(/LIMIT/i, `WHERE ${filterClause}\nLIMIT`);
-      } else {
-        newQuery = `${current.replace(/;+\s*$/, '')}\nWHERE ${filterClause};`;
+      if (newQuery) {
+        updateActiveTabQuery(newQuery);
+        runQuery(newQuery);
+        showNotification(`Applied filter: "${col}" ${op} '${val}'`, 'info');
       }
-
-      updateActiveTabQuery(newQuery);
-      runQuery(newQuery);
-      showNotification(`Applied filter: ${filterClause}`, 'info');
     },
     [activeTab.query, updateActiveTabQuery, runQuery, showNotification]
   );
@@ -197,6 +191,7 @@ export const App: React.FC = () => {
         onOpenHistory={() => setHistoryOpen(true)}
         onOpenVisualizer={() => setVisualizerOpen(true)}
         onOpenRemoteUrl={() => setRemoteUrlOpen(true)}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
         onDropFiles={handleDropFiles}
         onLoadSample={handleLoadSample}
         hasResults={!!queryResult && !queryResult.error && queryResult.rowCount > 0}
@@ -223,6 +218,8 @@ export const App: React.FC = () => {
               runQuery(sql);
             }}
             onDropFiles={handleDropFiles}
+            onDropTable={dropTable}
+            onNotify={showNotification}
           />
         )}
 
@@ -243,6 +240,7 @@ export const App: React.FC = () => {
                 onSelectTab={setActiveTabId}
                 onAddTab={addTab}
                 onCloseTab={closeTab}
+                onRenameTab={renameTab}
                 query={activeTab.query}
                 onChangeQuery={updateActiveTabQuery}
                 onRunQuery={(selected) => runQuery(selected)}
@@ -354,6 +352,14 @@ export const App: React.FC = () => {
           explainResult={explainResult}
           onClose={() => setExplainResult(null)}
           onNotify={showNotification}
+        />
+      )}
+
+      {/* Shortcuts & Engine Overview Modal */}
+      {shortcutsOpen && (
+        <ShortcutsModal
+          engineInfo={engineInfo}
+          onClose={() => setShortcutsOpen(false)}
         />
       )}
 

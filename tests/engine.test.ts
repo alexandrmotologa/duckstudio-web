@@ -3,6 +3,8 @@ import {
   normalizeValue,
   convertRowsToCsv,
   convertRowsToMarkdown,
+  convertRowsToTsv,
+  injectSqlFilter,
 } from '../src/engine/queryExecutor';
 import { sanitizeTableName, detectFormat } from '../src/engine/fileLoader';
 
@@ -84,5 +86,54 @@ describe('Export Formatting', () => {
     expect(md).toContain('| category | revenue | active |');
     expect(md).toContain('| --- | --- | --- |');
     expect(md).toContain('| Electronics | 1500.5 | true |');
+  });
+
+  it('formats rows into TSV', () => {
+    const tsv = convertRowsToTsv(columns, rows);
+    const lines = tsv.split('\n');
+    expect(lines[0]).toBe('category\trevenue\tactive');
+    expect(lines[1]).toBe('Electronics\t1500.5\ttrue');
+    expect(lines[2]).toBe('Books\t320\tfalse');
+  });
+});
+
+describe('SQL Filter Injection (injectSqlFilter)', () => {
+  it('injects WHERE clause into simple SELECT query', () => {
+    const sql = 'SELECT * FROM orders;';
+    const res = injectSqlFilter(sql, 'status', 'completed', '=');
+    expect(res).toBe('SELECT * FROM orders\nWHERE "status" = \'completed\';');
+  });
+
+  it('injects condition into existing WHERE clause', () => {
+    const sql = 'SELECT * FROM orders WHERE total > 100;';
+    const res = injectSqlFilter(sql, 'country', 'RO', '=');
+    expect(res).toBe('SELECT * FROM orders WHERE total > 100 AND "country" = \'RO\';');
+  });
+
+  it('injects condition before GROUP BY clause', () => {
+    const sql = 'SELECT category, count(*) FROM orders GROUP BY category ORDER BY count DESC;';
+    const res = injectSqlFilter(sql, 'category', 'Electronics', '=');
+    expect(res).toContain('WHERE "category" = \'Electronics\'');
+    expect(res).toContain('GROUP BY category');
+    expect(res.indexOf('WHERE')).toBeLessThan(res.indexOf('GROUP BY'));
+  });
+
+  it('injects condition before ORDER BY clause when WHERE exists', () => {
+    const sql = 'SELECT * FROM orders WHERE active = true ORDER BY created_at DESC LIMIT 10;';
+    const res = injectSqlFilter(sql, 'priority', 'high', '=');
+    expect(res).toContain('WHERE active = true AND "priority" = \'high\'');
+    expect(res).toContain('ORDER BY created_at DESC LIMIT 10;');
+  });
+
+  it('escapes single quotes in filter values', () => {
+    const sql = 'SELECT * FROM users;';
+    const res = injectSqlFilter(sql, 'name', "O'Connor", '=');
+    expect(res).toContain("WHERE \"name\" = 'O''Connor';");
+  });
+
+  it('supports != operator', () => {
+    const sql = 'SELECT * FROM users;';
+    const res = injectSqlFilter(sql, 'role', 'admin', '!=');
+    expect(res).toContain("WHERE \"role\" != 'admin';");
   });
 });

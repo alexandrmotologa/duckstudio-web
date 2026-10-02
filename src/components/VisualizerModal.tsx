@@ -7,7 +7,10 @@ import {
   Activity,
   Maximize2,
   Image as ImageIcon,
-  FileCode
+  FileCode,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Palette
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -35,11 +38,21 @@ interface VisualizerModalProps {
   onClose: () => void;
 }
 
-const PALETTE = ['#F59E0B', '#10B981', '#06B6D4', '#8B5CF6', '#F43F5E', '#3B82F6', '#EC4899', '#14B8A6'];
+const PALETTES: Record<string, string[]> = {
+  vibrant: ['#F59E0B', '#10B981', '#06B6D4', '#8B5CF6', '#F43F5E', '#3B82F6', '#EC4899', '#14B8A6'],
+  ocean: ['#38BDF8', '#0284C7', '#06B6D4', '#0D9488', '#14B8A6', '#6366F1', '#818CF8', '#A5B4FC'],
+  sunset: ['#F97316', '#FB923C', '#F43F5E', '#E11D48', '#BE185D', '#DB2777', '#F59E0B', '#FBBF24'],
+  cyber: ['#10B981', '#34D399', '#06B6D4', '#22D3EE', '#A855F7', '#C084FC', '#F43F5E', '#FB7185'],
+};
 
 export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClose }) => {
   const [chartType, setChartType] = useState<ChartType>('bar');
+  const [selectedPalette, setSelectedPalette] = useState<keyof typeof PALETTES>('vibrant');
+  const [sortOrder, setSortOrder] = useState<'none' | 'desc' | 'asc'>('none');
+  const [isDonut, setIsDonut] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  const activeColors = PALETTES[selectedPalette] || PALETTES.vibrant;
 
   const { numericCols, allCols } = useMemo(() => {
     const all = result.columns;
@@ -65,7 +78,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
   const [yAxisCol, setYAxisCol] = useState<string>(defaultY);
 
   const chartData = useMemo(() => {
-    return result.rows.slice(0, 100).map((row) => {
+    let rows = result.rows.slice(0, 100).map((row) => {
       const xVal = row[xAxisCol];
       const yVal = row[yAxisCol];
       return {
@@ -73,7 +86,15 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
         [yAxisCol]: Number(yVal) || 0,
       };
     });
-  }, [result, xAxisCol, yAxisCol]);
+
+    if (sortOrder === 'desc') {
+      rows.sort((a, b) => Number(b[yAxisCol]) - Number(a[yAxisCol]));
+    } else if (sortOrder === 'asc') {
+      rows.sort((a, b) => Number(a[yAxisCol]) - Number(b[yAxisCol]));
+    }
+
+    return rows;
+  }, [result, xAxisCol, yAxisCol, sortOrder]);
 
   const stats = useMemo(() => {
     const values = chartData.map((d) => Number(d[yAxisCol]) || 0);
@@ -126,8 +147,8 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
     }
 
     const rect = svgElem.getBoundingClientRect();
-    const width = Math.max(rect.width, 800);
-    const height = Math.max(rect.height, 450);
+    const width = Math.max(rect.width, 900);
+    const height = Math.max(rect.height, 480);
 
     const canvas = document.createElement('canvas');
     canvas.width = width * 2;
@@ -161,7 +182,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-[#0F172A] border border-slate-700 rounded-xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="h-14 border-b border-slate-800 px-5 flex items-center justify-between bg-slate-900/80">
           <div className="flex items-center space-x-3">
@@ -171,7 +192,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
             <div>
               <h3 className="font-semibold text-slate-100 text-sm">Interactive Visualizer</h3>
               <p className="text-[11px] text-slate-400">
-                Visualizing query results ({chartData.length} records plotted)
+                Visualizing query results ({chartData.length} data points plotted)
               </p>
             </div>
           </div>
@@ -180,7 +201,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
             <button
               onClick={handleDownloadPng}
               className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
-              title="Download as PNG"
+              title="Download High-Res PNG"
             >
               <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
               <span>PNG</span>
@@ -189,7 +210,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
             <button
               onClick={handleDownloadSvg}
               className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
-              title="Download as vector SVG"
+              title="Download Vector SVG"
             >
               <FileCode className="w-3.5 h-3.5 text-amber-400" />
               <span>SVG</span>
@@ -242,7 +263,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
               }`}
             >
               <PieIcon className="w-3.5 h-3.5" />
-              <span>Pie</span>
+              <span>Pie / Donut</span>
             </button>
             <button
               onClick={() => setChartType('scatter')}
@@ -255,14 +276,14 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
             </button>
           </div>
 
-          {/* Axis Selectors */}
+          {/* Controls: Axis Selectors, Sorting, Theme */}
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-400 font-medium">X-Axis:</span>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400 font-medium">X:</span>
               <select
                 value={xAxisCol}
                 onChange={(e) => setXAxisCol(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1 text-xs focus:outline-none focus:border-amber-500"
+                className="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 max-w-[130px] truncate"
               >
                 {allCols.map((c) => (
                   <option key={c} value={c}>
@@ -272,16 +293,64 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
               </select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-400 font-medium">Y-Axis:</span>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400 font-medium">Y:</span>
               <select
                 value={yAxisCol}
                 onChange={(e) => setYAxisCol(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1 text-xs focus:outline-none focus:border-amber-500"
+                className="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 max-w-[130px] truncate"
               >
                 {allCols.map((c) => (
                   <option key={c} value={c}>
                     {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sorting control */}
+            <div className="flex items-center bg-slate-900 rounded border border-slate-800 p-0.5">
+              <button
+                onClick={() => setSortOrder(sortOrder === 'desc' ? 'none' : 'desc')}
+                className={`p-1 rounded ${sortOrder === 'desc' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:text-white'}`}
+                title="Sort Y descending"
+              >
+                <ArrowDownWideNarrow className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'none' : 'asc')}
+                className={`p-1 rounded ${sortOrder === 'asc' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:text-white'}`}
+                title="Sort Y ascending"
+              >
+                <ArrowUpNarrowWide className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Donut toggle for Pie */}
+            {chartType === 'pie' && (
+              <button
+                onClick={() => setIsDonut(!isDonut)}
+                className={`px-2 py-1 rounded text-xs border ${
+                  isDonut
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-medium'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Donut
+              </button>
+            )}
+
+            {/* Color Palette Selector */}
+            <div className="flex items-center space-x-1">
+              <Palette className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={selectedPalette}
+                onChange={(e) => setSelectedPalette(e.target.value as keyof typeof PALETTES)}
+                className="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 capitalize"
+              >
+                {Object.keys(PALETTES).map((p) => (
+                  <option key={p} value={p}>
+                    {p}
                   </option>
                 ))}
               </select>
@@ -299,9 +368,9 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
                   <XAxis dataKey={xAxisCol} stroke="#9CA3AF" tick={{ fontSize: 11 }} interval={0} angle={-25} textAnchor="end" />
                   <YAxis stroke="#9CA3AF" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', color: '#F3F4F6' }} />
-                  <Bar dataKey={yAxisCol} fill="#F59E0B" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey={yAxisCol} fill={activeColors[0]} radius={[4, 4, 0, 0]}>
                     {chartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                      <Cell key={`cell-${index}`} fill={activeColors[index % activeColors.length]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -311,29 +380,38 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
                   <XAxis dataKey={xAxisCol} stroke="#9CA3AF" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" />
                   <YAxis stroke="#9CA3AF" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', color: '#F3F4F6' }} />
-                  <Line type="monotone" dataKey={yAxisCol} stroke="#10B981" strokeWidth={2.5} dot={{ r: 4, fill: '#10B981' }} />
+                  <Line type="monotone" dataKey={yAxisCol} stroke={activeColors[0]} strokeWidth={2.5} dot={{ r: 4, fill: activeColors[0] }} />
                 </LineChart>
               ) : chartType === 'area' ? (
                 <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
                   <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
+                      <stop offset="5%" stopColor={activeColors[0]} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={activeColors[0]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
                   <XAxis dataKey={xAxisCol} stroke="#9CA3AF" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" />
                   <YAxis stroke="#9CA3AF" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', color: '#F3F4F6' }} />
-                  <Area type="monotone" dataKey={yAxisCol} stroke="#06B6D4" strokeWidth={2} fillOpacity={1} fill="url(#areaGradient)" />
+                  <Area type="monotone" dataKey={yAxisCol} stroke={activeColors[0]} strokeWidth={2} fillOpacity={1} fill="url(#areaGradient)" />
                 </AreaChart>
               ) : chartType === 'pie' ? (
                 <PieChart>
                   <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', color: '#F3F4F6' }} />
                   <Legend />
-                  <Pie data={chartData} dataKey={yAxisCol} nameKey={xAxisCol} cx="50%" cy="50%" outerRadius={120} innerRadius={45} label>
+                  <Pie
+                    data={chartData}
+                    dataKey={yAxisCol}
+                    nameKey={xAxisCol}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    innerRadius={isDonut ? 55 : 0}
+                    label
+                  >
                     {chartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                      <Cell key={`cell-${index}`} fill={activeColors[index % activeColors.length]} />
                     ))}
                   </Pie>
                 </PieChart>
@@ -343,7 +421,7 @@ export const VisualizerModal: React.FC<VisualizerModalProps> = ({ result, onClos
                   <XAxis dataKey={xAxisCol} stroke="#9CA3AF" tick={{ fontSize: 11 }} />
                   <YAxis dataKey={yAxisCol} stroke="#9CA3AF" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', color: '#F3F4F6' }} />
-                  <Scatter name="Points" data={chartData} fill="#8B5CF6" />
+                  <Scatter name="Points" data={chartData} fill={activeColors[0]} />
                 </ScatterChart>
               )}
             </ResponsiveContainer>

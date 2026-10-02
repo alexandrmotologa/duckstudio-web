@@ -1,5 +1,5 @@
 import { getDuckDb, getDuckDbConnection } from './duckdbWorker';
-import { QueryResult, TableSchema, ExplainResult, ColumnStats, ColumnTopValue } from './types';
+import { QueryResult, TableSchema, ExplainResult, ColumnStats, ColumnTopValue, DuckDbEngineInfo } from './types';
 import * as arrow from 'apache-arrow';
 
 /**
@@ -98,6 +98,83 @@ export async function executeQuery(query: string): Promise<QueryResult> {
       executionTimeMs,
       timestamp: Date.now(),
       error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Robustly injects a WHERE clause condition into an existing SQL query,
+ * safely respecting existing WHERE, GROUP BY, HAVING, WINDOW, QUALIFY, ORDER BY, and LIMIT clauses.
+ */
+export function injectSqlFilter(sql: string, column: string, value: string, op: '=' | '!=' = '='): string {
+  const cleanSql = sql.replace(/;+\s*$/, '').trim();
+  if (!cleanSql) return '';
+
+  const escapedVal = value.replace(/'/g, "''");
+  const filterClause = `"${column.replace(/"/g, '""')}" ${op} '${escapedVal}'`;
+
+  // Check for subsequent clauses that must appear AFTER WHERE
+  const subsequentKeywordsRegex = /\b(GROUP\s+BY|HAVING|WINDOW|QUALIFY|ORDER\s+BY|LIMIT|OFFSET)\b/i;
+  const whereMatch = cleanSql.match(/\bWHERE\b/i);
+
+  if (whereMatch && whereMatch.index !== undefined) {
+    const afterWhere = cleanSql.slice(whereMatch.index);
+    const subsequentMatch = afterWhere.match(subsequentKeywordsRegex);
+
+    if (subsequentMatch && subsequentMatch.index !== undefined && subsequentMatch.index > 0) {
+      const splitPoint = whereMatch.index + subsequentMatch.index;
+      const beforeClause = cleanSql.slice(0, splitPoint).trimEnd();
+      const afterClause = cleanSql.slice(splitPoint).trimStart();
+      return `${beforeClause} AND ${filterClause}\n${afterClause};`;
+    } else {
+      return `${cleanSql} AND ${filterClause};`;
+    }
+  }
+
+  // No existing WHERE clause
+  const match = cleanSql.match(subsequentKeywordsRegex);
+  if (match && match.index !== undefined) {
+    const before = cleanSql.slice(0, match.index).trimEnd();
+    const after = cleanSql.slice(match.index).trimStart();
+    return `${before}\nWHERE ${filterClause}\n${after};`;
+  }
+
+  return `${cleanSql}\nWHERE ${filterClause};`;
+}
+
+/**
+ * Drops a table or view from DuckDB catalog and frees associated in-memory structures.
+ */
+export async function dropCatalogTable(tableName: string, isView: boolean): Promise<void> {
+  const conn = await getDuckDbConnection();
+  const safeName = `"${tableName.replace(/"/g, '""')}"`;
+  const sql = isView ? `DROP VIEW IF EXISTS ${safeName};` : `DROP TABLE IF EXISTS ${safeName};`;
+  await conn.query(sql);
+}
+
+/**
+ * Fetches DuckDB Engine metadata including WebAssembly version and catalog summary.
+ */
+export async function fetchDuckDbInfo(): Promise<DuckDbEngineInfo> {
+  try {
+    const conn = await getDuckDbConnection();
+    const versionRes = await conn.query(`SELECT version() AS ver;`);
+    const version = String(versionRes.getChildAt(0)?.get(0) ?? 'DuckDB-Wasm v1.28.0');
+
+    const tables = await fetchCatalogTables();
+    const totalRows = tables.reduce((acc, t) => acc + (t.rowCount ?? 0), 0);
+
+    return {
+      version,
+      tableCount: tables.length,
+      totalRows,
+    };
+  } catch (err) {
+    console.error('Failed to fetch DuckDB info:', err);
+    return {
+      version: 'DuckDB-Wasm',
+      tableCount: 0,
+      totalRows: 0,
     };
   }
 }
@@ -296,7 +373,7 @@ export async function exportQueryToParquet(query: string): Promise<Uint8Array> {
 }
 
 /**
- * Converts query rows into a CSV string.
+ * Converts query rows into a CSV string safely.
  */
 export function convertRowsToCsv(columns: string[], rows: Record<string, unknown>[]): string {
   if (!columns.length) return '';
@@ -310,6 +387,24 @@ export function convertRowsToCsv(columns: string[], rows: Record<string, unknown
         return `"${str.replace(/"/g, '""')}"`;
       })
       .join(',')
+  );
+  return [header, ...lines].join('\n');
+}
+
+/**
+ * Converts query rows into a TSV string (Tab-Separated Values).
+ */
+export function convertRowsToTsv(columns: string[], rows: Record<string, unknown>[]): string {
+  if (!columns.length) return '';
+  const header = columns.join('\t');
+  const lines = rows.map((row) =>
+    columns
+      .map((col) => {
+        const val = row[col];
+        if (val === null || val === undefined) return '';
+        return typeof val === 'object' ? JSON.stringify(val) : String(val);
+      })
+      .join('\t')
   );
   return [header, ...lines].join('\n');
 }
